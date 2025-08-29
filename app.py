@@ -21,7 +21,7 @@ class Link(db.Model):
     url = db.Column(db.String(255), nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
 
-# --- ROTA PRINCIPAL (POR ENQUANTO) ---
+# --- ROTA PRINCIPAL ---
 @app.route('/')
 def home():
     return render_template('dashboard.html')
