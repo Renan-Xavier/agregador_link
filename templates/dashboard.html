@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agregador de Links - Dashboard</title>
+    <meta name="description" content="Organize e gerencie seus links favoritos em um só lugar">
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔗</text></svg>">
+    
+    <!-- CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    
+    <!-- Meta tags para SEO e redes sociais -->
+    <meta property="og:title" content="Agregador de Links">
+    <meta property="og:description" content="Organize e gerencie seus links favoritos">
+    <meta property="og:type" content="website">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <h1>🔗 Agregador de Links</h1>
+            <p>Organize e gerencie seus links favoritos em um só lugar</p>
+        </header>
+
+        <!-- Estatísticas -->
+        <div class="stats">
+            <div class="stat-item" title="Quantidade total de links salvos na sua coleção">
+                <span class="stat-number" id="total-links">0</span>
+                <span class="stat-label">Total de Links</span>
+            </div>
+            <div class="stat-item" title="Número de sites diferentes (domínios únicos) nos seus links">
+                <span class="stat-number" id="total-domains">0</span>
+                <span class="stat-label">Domínios Únicos</span>
+            </div>
+            <div class="stat-item" title="Links adicionados hoje">
+                <span class="stat-number" id="links-today">0</span>
+                <span class="stat-label">Adicionados Hoje</span>
+            </div>
+        </div>
+
+        <!-- Formulário para adicionar link -->
+        <div class="card">
+            <h2>➕ Adicionar Novo Link</h2>
+            <form id="add-link-form" class="add-form">
+                <input 
+                    type="text" 
+                    id="title" 
+                    name="title" 
+                    placeholder="Título do link (ex: GitHub)" 
+                    title="Digite um nome descritivo para o seu link"
+                    class="form-input"
+                    required
+                    maxlength="100"
+                >
+                <input 
+                    type="url" 
+                    id="url" 
+                    name="url" 
+                    placeholder="https://exemplo.com" 
+                    title="Digite a URL completa começando com http:// ou https://"
+                    class="form-input"
+                    required
+                    pattern="https?://.+"
+                >
+                <button type="submit" class="btn-primary" title="Clique para adicionar o link à sua coleção">
+                    Adicionar Link
+                </button>
+            </form>
+            
+            <!-- Campo de busca -->
+            <div style="margin-top: 20px;">
+                <input 
+                    type="text" 
+                    id="search-input" 
+                    placeholder="🔍 Buscar links..." 
+                    title="Digite para buscar por título ou URL dos seus links"
+                    class="form-input"
+                    style="width: 100%;"
+                >
+            </div>
+        </div>
+
+        <!-- Lista de links -->
+        <div class="card">
+            <h2>📂 Meus Links</h2>
+            <div class="links-grid" id="links-list">
+                <!-- Links serão carregados aqui via JavaScript -->
+            </div>
+            
+            <!-- Botões de ação -->
+            <div style="margin-top: 20px; text-align: center; display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
+                <button onclick="refreshLinks()" class="btn-primary" style="background: #48bb78;" title="Recarregar a lista de links do servidor">
+                    🔄 Atualizar
+                </button>
+                <button onclick="clearSearch()" class="btn-primary" style="background: #ed8936;" title="Limpar o campo de busca e mostrar todos os links">
+                    🗑️ Limpar Busca
+                </button>
+                <button onclick="exportLinks()" class="btn-primary" style="background: #9f7aea;" title="Baixar todos os seus links em formato JSON">
+                    📥 Exportar
+                </button>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <footer style="text-align: center; margin-top: 40px; color: rgba(255,255,255,0.7); font-size: 0.9rem;">
+            <p>© 2025 Agregador de Links - Feito com ❤️ e Flask</p>
+            <p style="margin-top: 5px; font-size: 0.8rem;">
+                <a href="#" style="color: rgba(255,255,255,0.8); text-decoration: none;" onclick="showAbout()" title="Informações sobre o aplicativo">Sobre</a> • 
+                <a href="#" style="color: rgba(255,255,255,0.8); text-decoration: none;" onclick="showKeyboardShortcuts()" title="Ver lista de atalhos do teclado">Atalhos</a> • 
+                <a href="https://github.com" target="_blank" style="color: rgba(255,255,255,0.8); text-decoration: none;" title="Visite nosso repositório no GitHub">GitHub</a>
+            </p>
+        </footer>
+    </div>
+
+    <!-- JavaScript -->
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+    
+    <!-- Funcionalidades extras -->
+    <script>
+        // Função para exportar links
+        function exportLinks() {
+            if (!linkManager || linkManager.links.length === 0) {
+                linkManager.showNotification('Nenhum link disponível para exportar', 'error');
+                return;
+            }
+
+            const data = {
+                exportDate: new Date().toISOString(),
+                totalLinks: linkManager.links.length,
+                links: linkManager.links
+            };
+
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `links-backup-${new Date().toISOString().split('T')[0]}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            
+            linkManager.showNotification('Links exportados com sucesso!', 'success');
+        }
+
+        // Função para mostrar informações sobre o app
+        function showAbout() {
+            alert(`Agregador de Links v1.0
+
+Um aplicativo simples e elegante para organizar seus links favoritos.
+
+Funcionalidades:
+• Adicionar e remover links
+• Busca em tempo real
+• Interface responsiva
+• Exportação de dados
+• Estatísticas em tempo real
+
+Desenvolvido com Flask, HTML5, CSS3 e JavaScript ES6.`);
+        }
+
+        // Função para mostrar atalhos do teclado
+        function showKeyboardShortcuts() {
+            alert(`Atalhos do Teclado:
+
+Ctrl + / : Focar no campo de busca
+Ctrl + N : Focar no campo de título
+Ctrl + R : Atualizar lista de links
+Ctrl + E : Exportar links
+Esc : Limpar busca
+
+Dica: Use Tab para navegar entre os campos!`);
+        }
+
+        // Atalhos do teclado
+        document.addEventListener('keydown', (e) => {
+            if (e.ctrlKey) {
+                switch(e.key) {
+                    case '/':
+                        e.preventDefault();
+                        document.getElementById('search-input')?.focus();
+                        break;
+                    case 'n':
+                        e.preventDefault();
+                        document.getElementById('title')?.focus();
+                        break;
+                    case 'r':
+                        e.preventDefault();
+                        refreshLinks();
+                        break;
+                    case 'e':
+                        e.preventDefault();
+                        exportLinks();
+                        break;
+                }
+            } else if (e.key === 'Escape') {
+                clearSearch();
+            }
+        });
+
+        // Atualizar estatísticas periodicamente
+        setInterval(() => {
+            if (linkManager && !linkManager.isLoading) {
+                linkManager.updateStats();
+            }
+        }, 30000); // A cada 30 segundos
+    </script>
+</body>
+</html>

@@ -1,0 +1,33 @@
+### 1. Inicie seu servidor Flask antes de testar!
+# Comando no terminal: flask run --debug
+# Este endpoint busca todos os links (no começo, a lista estará vazia).
+GET http://127.0.0.1:5000/api/links
+
+### 2. Adicionar um novo link
+# A API espera receber dados no formato JSON.
+POST http://127.0.0.1:5000/api/links
+Content-Type: application/json
+
+{
+    "title": "Meu GitHub",
+    "url": "https://github.com"
+}
+
+### 3. Adicionar outro link
+POST http://127.0.0.1:5000/api/links
+Content-Type: application/json
+
+{
+    "title": "Meu Portfólio",
+    "url": "https://meu-portfolio.com"
+}
+
+### 4. Buscar os links novamente
+# Agora a lista deve conter os dois links que você criou.
+GET http://127.0.0.1:5000/api/links
+
+
+### 5. Deletar um link
+# Substitua o '1' pelo ID do link que você quer deletar.
+# O ID é retornado quando você cria o link e quando lista todos.
+DELETE http://127.0.0.1:5000/api/links/1
